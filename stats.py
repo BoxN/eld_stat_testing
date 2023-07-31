@@ -11,8 +11,8 @@ class Stats():
                 
         'dmg_per',  
         'dmg_per_m',
-        'crit',        
-        'maxi',        
+        'maxi',
+        'crit',            
         'crit_dmg',
         
         'pola',
@@ -21,7 +21,8 @@ class Stats():
         'boss_dmg',
         'adapt',
         
-        'cdr'
+        'cdr',
+        'dmg_with_hp'
     ]
     
     def __init__(self, id, name, set, attributes={}):
@@ -64,7 +65,7 @@ class Stats():
             new_attributes = {}
             for key in Stats.attribute_labels:
                 new_attributes[key] = self.attributes[key] + other.attributes[key]
-            return Stats(0, 'TOTAL', '', new_attributes)
+            return Stats(0, self.name, '', new_attributes)
         else:
             raise TypeError("Unsupported operand type for +")
         
@@ -74,7 +75,7 @@ class Stats():
         s += f"|{self.name                  :26}"
         s += f"|{self.set                   :10}"
         for key in Stats.attribute_labels:
-            s += f"|{self.attributes[key]:<10}"
+            s += f"|{round(self.attributes[key],6):<10}"
         return s
 
     

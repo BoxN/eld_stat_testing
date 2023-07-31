@@ -11,10 +11,7 @@ class Character(Stats):
         super().__init__(id, name, set, attributes)
         
         self.items = {}
-
-        # all sockets are 6% sage
-        self.sockets_count = 16
-        self.sockets = []
+        self.factors = None
         
         self.sets = [
             {'set':'Chrimson',  'equiped':0, 'required':2, 'effect':{'pola':7}},
@@ -43,23 +40,21 @@ class Character(Stats):
         for x, r in [(40, 1), (35, 0.8), (30, 0.6), (35, 0.4)]:
             if self.attributes['crit'] <= x:
                 norm_crit += self.attributes['crit']*r
-                self.attributes['crit'] = norm_crit
-                break
+                self.attributes['crit'] = 0
             else:
                 self.attributes['crit'] -= x
                 norm_crit += x*r
-        
+        self.attributes['crit'] = norm_crit
         
         norm_maxi = 0
         for x, r in [(40, 1), (40, 0.75), (40, 0.5), (40, 0.25)]:
             if self.attributes['maxi'] <= x:
                 norm_maxi += self.attributes['maxi']*r
-                self.attributes['maxi'] = norm_maxi
-                break
+                self.attributes['maxi'] = 0
             else:
                 self.attributes['maxi'] -= x
                 norm_maxi += x*r
-        
+        self.attributes['maxi'] = norm_maxi
         return self
 
     def apply_sets(self):
@@ -80,28 +75,48 @@ class Character(Stats):
         
         self.apply_sets()
         self.calculate()
+        #print('pre',self.attributes['maxi'])
         self.apply_normalization()
-
-        tot = 1
-        tot *= (1+self.attributes['dmg_per']/100)*(1+self.attributes['dmg_per_m']/100)
-        tot *= 0.5+self.attributes['maxi']/100
-        tot *= 1+self.attributes['crit']/100*(1+self.attributes['crit_dmg']/100)
-        tot *= 1+self.attributes['specific']/100
-        tot *= 1+self.attributes['pola']/100
-        tot *= 1+self.attributes['all_s_dmg']/100
-        tot *= 1+self.attributes['boss_dmg']/100
-        tot *= (1-DEMON_REALM_DEBUFF+self.attributes['adapt']/100)/(1-DEMON_REALM_DEBUFF)
-        tot *= 1+self.attributes['cdr']/100
+        #print('post',self.attributes['maxi'])
+        
+        all_factors = {}
+        
+        all_factors['dmg_per']       = 1+self.attributes['dmg_per']/100
+        all_factors['dmg_per_m']     = 1+self.attributes['dmg_per_m']/100
+        all_factors['dmg_with_hp']   = 1+self.attributes['dmg_with_hp']/100
+        all_factors['maxi']          = 0.5+self.attributes['maxi']/100
+        all_factors['crit']          = self.attributes['crit']/100
+        all_factors['crit_dmg']      = 1.5+self.attributes['crit_dmg']/100
+        all_factors['specific']      = 1+self.attributes['specific']/100
+        all_factors['pola']          = 1+self.attributes['pola']/100
+        all_factors['all_s_dmg']     = 1+self.attributes['all_s_dmg']/100
+        all_factors['boss_dmg']      = 1+self.attributes['boss_dmg']/100
+        all_factors['adapt']         = (1-DEMON_REALM_DEBUFF+self.attributes['adapt']/100)/(1-DEMON_REALM_DEBUFF)
+        all_factors['cdr']           = 1+self.attributes['cdr']/100
+        
+        self.factors = Stats(1,'FACTORS', '',attributes=all_factors)
+        
+        mul = 1
+        mul *= all_factors['dmg_per']*all_factors['dmg_per_m']
+        mul *= all_factors['dmg_with_hp']*0.8    # specifico per tene con "with hp" maxata a 80% HP
+        mul *= all_factors['maxi']
+        mul *= (all_factors['crit']*all_factors['crit_dmg'] 
+                + all_factors['crit']*1.5)
+        mul *= all_factors['specific']
+        mul *= all_factors['pola']
+        mul *= all_factors['all_s_dmg']
+        mul *= all_factors['boss_dmg']
+        mul *= all_factors['adapt']
+        mul *= all_factors['cdr']
         
         
-        #self.items = {}
         
         if DMG_TYPE == 'phys':
-            tot = tot*self.attributes['phy_atk']
+            tot = mul*self.attributes['phy_atk']
         elif DMG_TYPE == 'mag':
-            tot = tot*self.attributes['mag_atk']
+            tot = mul*self.attributes['mag_atk']
             
-        return [tot, self]
+        return [mul, tot, self]
     
     @staticmethod
     def headers():
@@ -119,6 +134,6 @@ class Character(Stats):
         for obj in self.items.values():
             s += f"{obj}\n"
         s += super().__str__()
-
+        s += f"\n{self.factors}"
         return s + '\n'
 
