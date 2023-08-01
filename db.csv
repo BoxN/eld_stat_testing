@@ -1,6 +1,6 @@
 ﻿slot,name,set,e,r,phy_atk,mag_atk,phy_def,mag_def,hp,dmg_per,dmg_per_m,action,maxi,crit,crit_dmg,pola,specific,all_s_dmg,boss_dmg,adapt,cdr,dmg_with_hp,,,,dmg_red
 3,rigo top,chrimson,9,15,1155,0,1883,1734,79741,,,,,,6,,10,,,3,,,,,,
-4,rigo bottom,chrimson,9,15,0,1662,1708,1914,69542,,,,,,6,,10,,,3,,,,,,
+4,rigo bottom,chrimson,9,15,0,1662,1708,1914,69542,3,,,,,6,,10,,,3,,,,,,
 5,rigo gloves,chrimson,9,15,1368,0,1553,1734,28748,,,,,,6,,10,,,3,,,,,,
 6,rigo shoes,chrimson,9,15,0,1332,1708,1554,38945,,,,,,6,,10,,,3,,,,,,
 3,tene top,with hp,9,15,1457,0,2185,2036,82761,2,,,,,6,,10,,,2,,2,,,,

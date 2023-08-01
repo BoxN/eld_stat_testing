@@ -1,3 +1,4 @@
+from functools import reduce
 from stats import Stats
 
 DEMON_REALM_DEBUFF = 0.9
@@ -113,16 +114,13 @@ class Character(Stats):
         
         all_factors = {}
         
-        all_factors['dmg_per']       = 1+self.attributes['dmg_per']/100
-        all_factors['dmg_per_m']     = 1+self.attributes['dmg_per_m']/100
-        all_factors['dmg_with_hp']   = 1+self.attributes['dmg_with_hp']/100
+        all_factors['dmg_per_m']     = 1
+        all_factors['dmg_per']       = (1+self.attributes['dmg_per']/100)*(1+self.attributes['dmg_per_m']/100)
+        all_factors['dmg_with_hp']   = (1+self.attributes['dmg_with_hp']/100)*0.8
         all_factors['maxi']          = 0.5+self.attributes['maxi']/100
         
-        all_factors['crit']          = self.attributes['crit']/100
-        all_factors['crit_dmg']      = self.attributes['crit_dmg']/100
-        
-        all_factors['crit_dmg']      = all_factors['crit']*all_factors['crit_dmg']+1.5
-        all_factors['crit']          = 0
+        all_factors['crit_dmg']      = self.attributes['crit']/100*self.attributes['crit_dmg']/100+1.5
+        all_factors['crit']          = 1
         
         all_factors['specific']      = 1+self.attributes['specific']/100
         all_factors['pola']          = 1+self.attributes['pola']/100
@@ -135,18 +133,7 @@ class Character(Stats):
         
         self.factors = Stats('Result','FACTORS',attributes=all_factors)
         
-        mul = 1
-        mul *= all_factors['dmg_per']*all_factors['dmg_per_m']
-        mul *= all_factors['dmg_with_hp']*0.8    # specifico per tene con "with hp" maxata a 80% HP
-        mul *= all_factors['maxi'] 
-        mul *= all_factors['crit_dmg']
-        mul *= all_factors['specific']
-        mul *= all_factors['pola']
-        mul *= all_factors['all_s_dmg']
-        mul *= all_factors['boss_dmg']
-        mul *= all_factors['adapt']
-        mul *= all_factors['cdr']
-        mul *= all_factors['cont_dmg']
+        mul = reduce(lambda a,b: a*b, all_factors.values())
         
         #print(self.attributes['crit'], all_factors['crit'], all_factors['crit_dmg'])
 
