@@ -22,10 +22,11 @@ class Stats():
         'adapt',
         
         'cdr',
-        'dmg_with_hp'
+        'dmg_with_hp',
+        'cont_dmg'
     ]
     
-    def __init__(self, id, name, set, attributes={}):
+    def __init__(self, id, name, set='', attributes={}):
        
         # Base attributes
         self.id = id
@@ -37,15 +38,18 @@ class Stats():
         
         # save the passed attributes
         for key in Stats.attribute_labels:
-            self.attributes[key] = 0
+            if key in attributes:
+                self.attributes[key] = attributes[key]
+            else:
+                self.attributes[key] = 0.0
         
-        for key in attributes:
-            self.attributes[key] = attributes[key]
+        #for key in attributes:
+        #    self.attributes[key] = attributes[key]
                 
     
     @staticmethod
     def sum(stats_list):
-        empty = Stats(0, 'TOTAL', '', {})
+        empty = Stats(0, 'TOTAL')
         for elem in stats_list:
             empty = empty + elem
         return empty
@@ -65,7 +69,7 @@ class Stats():
             new_attributes = {}
             for key in Stats.attribute_labels:
                 new_attributes[key] = self.attributes[key] + other.attributes[key]
-            return Stats(0, self.name, '', new_attributes)
+            return Stats(other.id, self.name, other.set, new_attributes)
         else:
             raise TypeError("Unsupported operand type for +")
         

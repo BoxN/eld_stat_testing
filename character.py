@@ -5,7 +5,7 @@ DMG_TYPE = 'mag' # can be 'mag' or 'phys'
 
 class Character(Stats):
     
-    def __init__(self, id, name, set, attributes={}):
+    def __init__(self, id, name, set='', attributes={}):
         
         # Stats
         super().__init__(id, name, set, attributes)
@@ -14,28 +14,46 @@ class Character(Stats):
         self.factors = None
         
         self.sets = [
-            {'set':'Chrimson',  'equiped':0, 'required':2, 'effect':{'pola':7}},
-            {'set':'Chrimson',  'equiped':0, 'required':4, 'effect':{'pola':13}},
-            {'set':'Sage',      'equiped':0, 'required':2, 'effect':{'all_s_dmg':10}},
-            {'set':'Sage',      'equiped':0, 'required':4, 'effect':{'crit_dmg':15}},
-            {'set':'With HP',   'equiped':0, 'required':4, 'effect':{'dmg_per':5, 'adapt':2}},
-            {'set':'Reset',     'equiped':0, 'required':4, 'effect':{'cdr':20, 'adapt':2}},
+            {'set':'chrimson',  'equiped':0, 'required':2, 'effect':{'pola':7}},
+            {'set':'chrimson',  'equiped':0, 'required':4, 'effect':{'pola':13}},
+            {'set':'sage',      'equiped':0, 'required':2, 'effect':{'all_s_dmg':10}},
+            {'set':'sage',      'equiped':0, 'required':4, 'effect':{'crit_dmg':15}},
+            {'set':'with hp',   'equiped':0, 'required':4, 'effect':{'dmg_per':5, 'adapt':2}},
+            {'set':'reset',     'equiped':0, 'required':4, 'effect':{'cdr':8, 'adapt':2}},
+            
+            {'set':'SK_armor',  'equiped':0, 'required':2, 'effect':{'pola':2}},
+            {'set':'SK_armor',  'equiped':0, 'required':4, 'effect':{'crit':7, 'all_s_dmg':4}},
+            {'set':'SK_armor',  'equiped':0, 'required':5, 'effect':{'adapt':5}},
+            {'set':'SK_weap',   'equiped':0, 'required':2, 'effect':{'all_s_dmg':3}},
+            {'set':'SK_weap',   'equiped':0, 'required':3, 'effect':{'pola':5, 'all_s_dmg':2}},
+            {'set':'SK_weap',   'equiped':0, 'required':4, 'effect':{'mov':5, 'jump':5}},
+            
+            {'set':'DrA_armor',  'equiped':0, 'required':2, 'effect':{'cont_dmg':2, 'crit':2}},
+            {'set':'DrA_armor',  'equiped':0, 'required':4, 'effect':{'adapt':3, 'maxi':5}},
+            {'set':'DrA_armor',  'equiped':0, 'required':5, 'effect':{'pola':5}},
+            {'set':'DrA_weap',   'equiped':0, 'required':2, 'effect':{'pola':3, 'crit':5}},
+            {'set':'DrA_weap',   'equiped':0, 'required':3, 'effect':{'cont_dmg':5, 'all_s_dmg':2}}
         ]
+    
+    # sum all
     def calculate(self):
         
-        total = Stats('TOTAL','','')
+        total = Stats('TOTAL','result')
         for placement, item in self.items.items():
             total += item
         
         self.attributes = total.attributes
         return self
     
+    # assign an item to a slot
     def equip(self, item, placement):
         self.items[placement] = item
         return self
     
+    # change some stats acording to normalization steps
     def apply_normalization(self):
         
+        # normalize crit according to the efficency steps
         norm_crit = 0
         for x, r in [(40, 1), (35, 0.8), (30, 0.6), (35, 0.4)]:
             if self.attributes['crit'] <= x:
@@ -44,8 +62,10 @@ class Character(Stats):
             else:
                 self.attributes['crit'] -= x
                 norm_crit += x*r
+        # override previous value
         self.attributes['crit'] = norm_crit
         
+        # normalize maxi according to the efficency steps
         norm_maxi = 0
         for x, r in [(40, 1), (40, 0.75), (40, 0.5), (40, 0.25)]:
             if self.attributes['maxi'] <= x:
@@ -54,30 +74,42 @@ class Character(Stats):
             else:
                 self.attributes['maxi'] -= x
                 norm_maxi += x*r
+        # override previous value
         self.attributes['maxi'] = norm_maxi
+        
         return self
 
     def apply_sets(self):
         
-        for key, item in self.items.items():
-            
+        # check all equiped items
+        for item in self.items.values():
+            # crosscheck all the available set effect
             for set in self.sets:
+                
+                # update item count for set (2/5, 3/5, 5/5 complete)
                 if item.set == set['set']:
                     set['equiped'] += 1
-                   
-        for i, set in enumerate(self.sets):
+        
+        # iterate and equip the set effect when the requirement are satisfied 
+        for set in self.sets:
             if set['equiped'] >= set['required']:
-                set_item = Stats('set',set['set'],set['required'],attributes=set['effect'])
-                self.items[str(i)] = set_item
                 
+                # create an item from the set effect stats
+                set_item = Stats('set',set['set'], set['required'], attributes=set['effect'])
+                
+                # assign the item to a custom slot or add of already existing
+                if set_item.name in self.items:
+                    self.items[set_item.name] += set_item
+                else:
+                    self.items[set_item.name] = set_item
+          
         return self
     def get_damage(self):
-        
-        self.apply_sets()
-        self.calculate()
-        #print('pre',self.attributes['maxi'])
-        self.apply_normalization()
-        #print('post',self.attributes['maxi'])
+        self = self.apply_sets()
+        self = self.calculate()
+        #print('pre',self.attributes['crit'])
+        self = self.apply_normalization()
+        #print('post',self.attributes['crit'])
         
         all_factors = {}
         
@@ -85,31 +117,39 @@ class Character(Stats):
         all_factors['dmg_per_m']     = 1+self.attributes['dmg_per_m']/100
         all_factors['dmg_with_hp']   = 1+self.attributes['dmg_with_hp']/100
         all_factors['maxi']          = 0.5+self.attributes['maxi']/100
+        
         all_factors['crit']          = self.attributes['crit']/100
-        all_factors['crit_dmg']      = 1.5+self.attributes['crit_dmg']/100
+        all_factors['crit_dmg']      = self.attributes['crit_dmg']/100
+        
+        all_factors['crit_dmg']      = all_factors['crit']*all_factors['crit_dmg']+1.5
+        all_factors['crit']          = 0
+        
         all_factors['specific']      = 1+self.attributes['specific']/100
         all_factors['pola']          = 1+self.attributes['pola']/100
         all_factors['all_s_dmg']     = 1+self.attributes['all_s_dmg']/100
         all_factors['boss_dmg']      = 1+self.attributes['boss_dmg']/100
         all_factors['adapt']         = (1-DEMON_REALM_DEBUFF+self.attributes['adapt']/100)/(1-DEMON_REALM_DEBUFF)
         all_factors['cdr']           = 1+self.attributes['cdr']/100
+        all_factors['cont_dmg']      = 1+self.attributes['cont_dmg']/100
         
-        self.factors = Stats(1,'FACTORS', '',attributes=all_factors)
+        
+        self.factors = Stats('Result','FACTORS',attributes=all_factors)
         
         mul = 1
         mul *= all_factors['dmg_per']*all_factors['dmg_per_m']
         mul *= all_factors['dmg_with_hp']*0.8    # specifico per tene con "with hp" maxata a 80% HP
-        mul *= all_factors['maxi']
-        mul *= (all_factors['crit']*all_factors['crit_dmg'] 
-                + all_factors['crit']*1.5)
+        mul *= all_factors['maxi'] 
+        mul *= all_factors['crit_dmg']
         mul *= all_factors['specific']
         mul *= all_factors['pola']
         mul *= all_factors['all_s_dmg']
         mul *= all_factors['boss_dmg']
         mul *= all_factors['adapt']
         mul *= all_factors['cdr']
+        mul *= all_factors['cont_dmg']
         
-        
+        #print(self.attributes['crit'], all_factors['crit'], all_factors['crit_dmg'])
+
         
         if DMG_TYPE == 'phys':
             tot = mul*self.attributes['phy_atk']
