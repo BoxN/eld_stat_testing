@@ -6,10 +6,10 @@ DMG_TYPE = 'mag' # can be 'mag' or 'phys'
 
 class Character(Stats):
     
-    def __init__(self, id, name, set='', attributes={}):
+    def __init__(self, slot, name, set='', attributes={}):
         
         # Stats
-        super().__init__(id, name, set, attributes)
+        super().__init__(slot, name, set, attributes)
         
         self.items = {}
         self.factors = None
@@ -108,6 +108,46 @@ class Character(Stats):
     def get_damage(self):
         self = self.apply_sets()
         self = self.calculate()
+        
+        #print('pre',self.attributes['crit'])
+        self = self.apply_normalization()
+        #print('post',self.attributes['crit'])
+        
+        all_factors = {}
+        
+        all_factors['dmg_per_m']     = 1
+        all_factors['dmg_per']       = (1+self.attributes['dmg_per']/100)*(1+self.attributes['dmg_per_m']/100)
+        all_factors['dmg_with_hp']   = (1+self.attributes['dmg_with_hp']/100)*0.8
+        all_factors['maxi']          = 0.5+self.attributes['maxi']/100
+        
+        all_factors['crit_dmg']      = self.attributes['crit']/100*self.attributes['crit_dmg']/100+1.5
+        all_factors['crit']          = 1
+        
+        all_factors['specific']      = 1+self.attributes['specific']/100
+        all_factors['pola']          = 1+self.attributes['pola']/100
+        all_factors['all_s_dmg']     = 1+self.attributes['all_s_dmg']/100
+        all_factors['boss_dmg']      = 1+self.attributes['boss_dmg']/100
+        all_factors['adapt']         = (1-DEMON_REALM_DEBUFF+self.attributes['adapt']/100)/(1-DEMON_REALM_DEBUFF)
+        all_factors['cdr']           = 1+self.attributes['cdr']/100
+        all_factors['cont_dmg']      = 1+self.attributes['cont_dmg']/100
+        
+        
+        self.factors = Stats('Result','FACTORS',attributes=all_factors)
+        
+        mul = reduce(lambda a,b: a*b, all_factors.values())
+          
+        return mul
+    
+    def get_mul(self):
+        self = self.apply_sets()
+        self = self.calculate()
+        
+        if self.attributes['crit'] > 150:
+            return 0
+        
+        if self.attributes['maxi'] > 170:
+            return 0
+        
         #print('pre',self.attributes['crit'])
         self = self.apply_normalization()
         #print('post',self.attributes['crit'])
@@ -143,7 +183,7 @@ class Character(Stats):
         elif DMG_TYPE == 'mag':
             tot = mul*self.attributes['mag_atk']
             
-        return [mul, tot, self]
+        return mul
     
     @staticmethod
     def headers():

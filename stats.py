@@ -26,10 +26,10 @@ class Stats():
         'cont_dmg'
     ]
     
-    def __init__(self, id, name, set='', attributes={}):
+    def __init__(self, slot, name, set='', attributes={}):
        
         # Base attributes
-        self.id = id
+        self.slot = slot
         self.name = name
         self.set = set
 
@@ -45,7 +45,14 @@ class Stats():
         
         #for key in attributes:
         #    self.attributes[key] = attributes[key]
-                
+        
+    @staticmethod
+    def maxed_crit(self):
+        return self.attributes['crit'] <= 140
+    
+    @staticmethod
+    def maxed_maxi(self):
+        return self.attributes['maxi'] <= 160
     
     @staticmethod
     def sum(stats_list):
@@ -56,7 +63,7 @@ class Stats():
     
     @staticmethod
     def headers():
-        s  = f"{'[id]':<10}"
+        s  = f"{'[slot]':<10}"
         s += f"|{'name':<26}"
         s += f"|{'set':<10}"
         for key in Stats.attribute_labels:
@@ -69,13 +76,13 @@ class Stats():
             new_attributes = {}
             for key in Stats.attribute_labels:
                 new_attributes[key] = self.attributes[key] + other.attributes[key]
-            return Stats(other.id, self.name, other.set, new_attributes)
+            return Stats(other.slot, self.name, other.set, new_attributes)
         else:
             raise TypeError("Unsupported operand type for +")
         
     def __str__(self) -> str:
         
-        s =  f"{self.id                     :10}"
+        s =  f"{self.slot                     :10}"
         s += f"|{self.name                  :26}"
         s += f"|{self.set                   :10}"
         for key in Stats.attribute_labels:
