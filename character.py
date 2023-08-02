@@ -105,10 +105,17 @@ class Character(Stats):
                     self.items[set_item.name] = set_item
           
         return self
-    def get_damage(self):
+    def get_mul(self):
         self = self.apply_sets()
         self = self.calculate()
         
+        if 'crit' in self.attributes:
+            if self.attributes['crit'] > 150:
+                return 0
+        
+        if 'maxi' in self.attributes:
+            if self.attributes['maxi'] > 170:
+                return 0
         #print('pre',self.attributes['crit'])
         self = self.apply_normalization()
         #print('post',self.attributes['crit'])
@@ -138,15 +145,9 @@ class Character(Stats):
           
         return mul
     
-    def get_mul(self):
+    def get_damage(self):
         self = self.apply_sets()
         self = self.calculate()
-        
-        if self.attributes['crit'] > 150:
-            return 0
-        
-        if self.attributes['maxi'] > 170:
-            return 0
         
         #print('pre',self.attributes['crit'])
         self = self.apply_normalization()
@@ -183,7 +184,7 @@ class Character(Stats):
         elif DMG_TYPE == 'mag':
             tot = mul*self.attributes['mag_atk']
             
-        return mul
+        return mul, tot, self
     
     @staticmethod
     def headers():
