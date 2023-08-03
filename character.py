@@ -1,5 +1,6 @@
 from functools import reduce
 from stats import Stats
+import math
 
 DEMON_REALM_DEBUFF = 0.9
 DMG_TYPE = 'mag' # can be 'mag' or 'phys'
@@ -105,44 +106,36 @@ class Character(Stats):
                     self.items[set_item.name] = set_item
           
         return self
+    
+    # reduced calculation function with only the resulting multiplying factor
     def get_mul(self):
-        self = self.apply_sets()
-        self = self.calculate()
+        self.apply_sets()
+        self.calculate()
         
         if 'crit' in self.attributes:
             if self.attributes['crit'] > 150:
-                return 0
+                return 1
         
         if 'maxi' in self.attributes:
             if self.attributes['maxi'] > 170:
-                return 0
+                return 1
         #print('pre',self.attributes['crit'])
-        self = self.apply_normalization()
+        self.apply_normalization()
         #print('post',self.attributes['crit'])
-        
-        all_factors = {}
-        
-        all_factors['dmg_per_m']     = 1
-        all_factors['dmg_per']       = (1+self.attributes['dmg_per']/100)*(1+self.attributes['dmg_per_m']/100)
-        all_factors['dmg_with_hp']   = (1+self.attributes['dmg_with_hp']/100)*0.8
-        all_factors['maxi']          = 0.5+self.attributes['maxi']/100
-        
-        all_factors['crit_dmg']      = self.attributes['crit']/100*self.attributes['crit_dmg']/100+1.5
-        all_factors['crit']          = 1
-        
-        all_factors['specific']      = 1+self.attributes['specific']/100
-        all_factors['pola']          = 1+self.attributes['pola']/100
-        all_factors['all_s_dmg']     = 1+self.attributes['all_s_dmg']/100
-        all_factors['boss_dmg']      = 1+self.attributes['boss_dmg']/100
-        all_factors['adapt']         = (1-DEMON_REALM_DEBUFF+self.attributes['adapt']/100)/(1-DEMON_REALM_DEBUFF)
-        all_factors['cdr']           = 1+self.attributes['cdr']/100
-        all_factors['cont_dmg']      = 1+self.attributes['cont_dmg']/100
-        
-        
-        self.factors = Stats('Result','FACTORS',attributes=all_factors)
-        
-        mul = reduce(lambda a,b: a*b, all_factors.values())
-          
+                
+        mul = 1.0
+        mul *= (1+self.attributes['dmg_per']/100)*(1+self.attributes['dmg_per_m']/100)
+        mul *= (1+self.attributes['dmg_with_hp']/100)*0.8
+        mul *= 0.5+self.attributes['maxi']/100
+        mul *= self.attributes['crit']/100*self.attributes['crit_dmg']/100+1.5
+        mul *= 1+self.attributes['specific']/100
+        mul *= 1+self.attributes['pola']/100
+        mul *= 1+self.attributes['all_s_dmg']/100
+        mul *= 1+self.attributes['boss_dmg']/100
+        mul *= (1-DEMON_REALM_DEBUFF+self.attributes['adapt']/100)/(1-DEMON_REALM_DEBUFF)
+        mul *= 1+self.attributes['cdr']/100
+        mul *= 1+self.attributes['cont_dmg']/100
+         
         return mul
     
     def get_damage(self):
